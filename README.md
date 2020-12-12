@@ -40,3 +40,7 @@
 ![MOD screen](/img/screen_mod.jpg)
 
 ![Tech info screen](/img/screen_tech_info.jpg)
+
+## PCB
+
+![PCB](/img/mainboard.png)
