@@ -2,21 +2,25 @@
 
 ## BOF 
 
-| # | Name                                          | Price |
-|---|-----------------------------------------------|-------|
-| 1 | Arduino Nano                                  |       |
-| 1 | ADS1115                                       |       |
-| 1 | 1.3 inch OLED Display 128*64 pixels wit - I2C |       |
-| 1 | MT3608 DC-DC Boost converter                  |       |
-| 1 | Diode 1N4007                                  |       |
-| 1 | 18650 Battery holder to solder                |       |
-| 1 | 18650 Battery with protection                 |       |
-| 1 | Audio Jack 3,5mm (mono) 0,6m                  |       |
-| 1 | 40 Pin header row                             |       |
-| 1 | O2 oxygen Cell                                |       |
-| 1 | Spelsberg Kabeldoos abox 060-62               |       |
-| 1 | On/Off button                                 |       |
-| 1 | Push Button                                   |       |
+| # | Name                                          | Price  |
+|---|-----------------------------------------------|--------|
+| 1 | PCB custom made                               |  9,99  |
+| 1 | Arduino Nano                                  | 19,00  |
+| 1 | ADS1115                                       | 14,95  |
+| 1 | 1.3 inch OLED Display 128*64 pixels wit - I2C |  8,00  |
+| 1 | MT3608 DC-DC Boost converter                  |  2,00  |
+| 1 | Diode 1N4007                                  |  0,10  |
+| 1 | 18650 Battery holder to solder                |  1,50  |
+| 1 | 18650 Battery with protection                 |  6,50  |
+| 1 | Audio Jack 3,5mm (mono) 0,6m                  |  1,50  |
+| 1 | 40 Pin header row                             |  0,40  |
+| 1 | O2 oxygen Cell                                | 79,00  |
+| 1 | Spelsberg Kabeldoos abox 060-62               | 12,00  |
+| 1 | On/Off button                                 |  2,50  |
+| 1 | Push Button                                   |  2,50  |
+
+Total cost: 167,95
+
 
 ## Functions 
 
