@@ -18,8 +18,11 @@
 | 1 | Spelsberg Kabeldoos abox 060-62               | 12,00  |
 | 1 | On/Off button                                 |  2,50  |
 | 1 | Push Button                                   |  2,50  |
+| 1 | Flow divertor                                 |  5,00  |
+| 1 | QuickOx                                       | 22,00  |
 
-Total cost: 167,95
+
+Total cost: 194,95
 
 
 ## Functions 
