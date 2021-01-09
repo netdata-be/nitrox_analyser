@@ -32,7 +32,7 @@
 #include <U8x8lib.h>
 #include <avr/wdt.h>
 
-#define RA_SIZE 20
+#define RA_SIZE 16
 RunningAverage RA(RA_SIZE);
 RunningAverage battVolt(20);
 
@@ -53,7 +53,7 @@ double oxVact = 0.0;
 float multiplier;
 byte previous = HIGH;
 unsigned long firstTime; // how long since the button was first pressed
-char battPcrt = 0;
+int battPcrt = 0;
 char active = 0;
 char bootcounter = 0;
 char toggle = 0;
@@ -360,10 +360,10 @@ void error(int e) {
 
 
   u8x8.setFont( u8x8_font_open_iconic_check_2x2 );
-  u8x8.drawString(3,0,"D");
+  u8x8.drawString(3,1,"D");
   u8x8.setFont(u8x8_font_chroma48medium8_r);
-  u8x8.drawString(7,0,"SENSOR");
-  u8x8.drawString(7,1,"ERROR");
+  u8x8.drawString(7,1,"SENSOR");
+  u8x8.drawString(7,2,"ERROR");
     
 
   u8x8.setInverseFont(1);
@@ -402,7 +402,7 @@ void batteryMonitor() {
   int battVolt_Value = analogRead(A0);
   battVolt.addValue(battVolt_Value * (5.0 / 1023.0));
   float volt = battVolt.getAverage();
-
+ 
   if ( volt >= 4.1 )  {
     battPcrt = 100;
   }
@@ -618,7 +618,7 @@ void analysing(int x, int cal, int cal100) {
 
       u8x8.setCursor(0, 4);
       u8x8.print("Batt  | ");
-      u8x8.print(battVolt.getAverage() , 1);
+      u8x8.print(battVolt.getAverage() , 2);
       u8x8.print(" V ");
 
       u8x8.setCursor(0, 5);
@@ -629,12 +629,12 @@ void analysing(int x, int cal, int cal100) {
 
       u8x8.setCursor(0, 6);
       if (cal100 > 0 ) {
-        u8x8.print("Cal   | Air + o2");
+        u8x8.print("refmix| Air + o2");
       } else {
-        u8x8.print("Cal   | Air    ");
+        u8x8.print("refmix| Air    ");
       }
       u8x8.setCursor(0, 7);
-      u8x8.print("Firmw | 1.1");
+      u8x8.print("Firmw | 1.2");
     }
   }
 }
