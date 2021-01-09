@@ -1,4 +1,4 @@
-
+  
 /*****************************************************************************
  * 
  * (c) 2020 Wouter D'Haeseleer <wouter@netdata.be>
@@ -32,7 +32,7 @@
 #include <U8x8lib.h>
 #include <avr/wdt.h>
 
-#define RA_SIZE 25
+#define RA_SIZE 20
 RunningAverage RA(RA_SIZE);
 RunningAverage battVolt(20);
 
@@ -42,7 +42,14 @@ U8X8_SH1106_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
 
 
 double barsize = RA_SIZE / 16.0 ;
-double calibrationv = 0;
+double oxVair = 0;
+double oxV1atm = 0;
+double oxVmax = 0;
+
+
+double result;
+double oxVact = 0.0;
+
 float multiplier;
 byte previous = HIGH;
 unsigned long firstTime; // how long since the button was first pressed
@@ -71,7 +78,7 @@ uint8_t lastbar[8]   = { 60  ,60  ,60  ,60  ,60  ,60  ,0   ,255};
 
 // if the voltage drops below or raises above these thresholds an error is shown
 #define milivolt_low_error 6
-#define milivolt_high_error 80
+#define milivolt_high_error 70
 
 #define buttonPin 8
 #define buzzer 9  // buzzer
@@ -98,18 +105,25 @@ void beep(int x = 1) { // make beep for x time
 }
 
 
-void read_sensor(int adc = 0) {
+int read_sensor(int adc = 0) {
   int16_t millivolts = 0;
+  double currentmv = 0;
   millivolts = ads.readADC_Differential_0_1();
   millivolts = abs(millivolts);
-  /* debug  erics */
-   // Serial.print("read_sensor o2: ");
-   // Serial.print(millivolts);
-   // Serial.print("\n");
-  /* */
-  
+
  
   RA.addValue(millivolts);
+
+  currentmv = RA.getAverage();
+  currentmv = abs(currentmv);
+  return currentmv;
+
+  /* debug  erics
+   Serial.print("read_sensor o2: ");
+   Serial.print(oxVact);
+   Serial.print(" mV\n");
+  */
+  
   wdt_reset();
 }
 
@@ -118,7 +132,9 @@ void setup(void) {
   Serial.begin(9600);
   Serial.print("Running: Setup\n");
 
-  page = EEPROMReadInt(1);
+  page   = EEPROMReadInt(1);
+  oxVmax = EEPROMReadInt(2);
+
 
   // Init 
   u8x8.begin();     // Init the OLED
@@ -161,6 +177,7 @@ void setup(void) {
   batteryMonitor();
 
 
+   /*
   // Draw a bootscreen on the OLED
   u8x8.setFont(u8x8_font_inb21_2x4_r);
   u8x8.setInverseFont(1);
@@ -171,10 +188,10 @@ void setup(void) {
   u8x8.drawString(0,5,"Wouter D'H v1.0");
   u8x8.drawString(6,7,"2020");
   delay(2000);
-
+  */
   
   u8x8.clearDisplay();
-  Serial.print("Setup finished\n");
+  //Serial.print("Setup finished\n");
 
 
 
@@ -201,12 +218,12 @@ unsigned int EEPROMReadInt(int p_address)
   return ((lowByte << 0) & 0xFF) + ((highByte << 8) & 0xFF00);
 }
 
-int calibrate(int x) {
-  /* */
-    Serial.print("calibrate:");
-    Serial.print(x);
-    Serial.print("\n");
-  /* */
+int calibrate(float oxGas) {
+ 
+    //Serial.print("calibrating for sampleling gas : ");
+    //Serial.print(oxGas);
+    //Serial.print(" % Oxygen\n");
+  
 
   // Clear the Running Avarage so we can start fresh
   RA.clear();
@@ -257,11 +274,10 @@ int calibrate(int x) {
   u8x8.drawTile(14,5, 1, lijn_boven);
   u8x8.drawTile(15,5, 1, lijn_boven);
 
-  
-  u8x8.drawString(2,7,"20.9 oxygen");
 
-
-
+  u8x8.setCursor(2, 7);
+  u8x8.print(oxGas);
+  u8x8.print(" oxygen");
 
   double result;
 
@@ -286,15 +302,18 @@ int calibrate(int x) {
       }
       bar = bar+1;
     }
-    read_sensor(0);
+    result = read_sensor(0);
     delay(50);
   }
   result = RA.getAverage();
   result = abs(result);
   
-  Serial.print("Calibration value o2: ");
-  Serial.print(result);
-  Serial.print("\n");
+  //Serial.print("Calibration value o2: ");
+  //Serial.print(result);
+  //Serial.print("\n");
+
+
+   
 
   if (result <= milivolt_low_error) {
     errorState=1;
@@ -302,21 +321,41 @@ int calibrate(int x) {
   } else {
     u8x8.clearDisplay();
     active = 0;
+
+    if ( oxGas == 20.9 ) {
+
+      // This is the 100% linear value of the milivolts expected
+      // From the sensor in 1 bar o2 == 100 % oxygen
+      oxV1atm = 1/0.209 * result * multiplier;
+
+      //Serial.print("Theoretical linear 100% o2 voltage level: ");
+      //Serial.print(oxV1atm);
+      //Serial.print(" mV \n");
+      
+    } else if ( oxGas == 100.0 ) {
+      //Serial.print("Voltage level for 100% o2 : ");
+      //Serial.print(result * multiplier);
+      //Serial.print(" mV \n");
+      EEPROMWriteInt(2, result);
+    }
     return result;
   }
 }
 
 void error(int e) {
-  double currentmv = 0;
-  double result;
-  double mv = 0.0;
 
-  read_sensor(0);
-  currentmv = RA.getAverage();
-  currentmv = abs(currentmv);
-  mv = currentmv * multiplier;
+
+  oxVact = read_sensor(0);
+  oxVact = oxVact * multiplier;
+
+
+
+
+
+  
+
   // Serial.print("mv = ");
-  // Serial.print(mv);
+  // Serial.print(oxVact);
   // Serial.print("\n");
 
 
@@ -339,13 +378,13 @@ void error(int e) {
   
   u8x8.setInverseFont(0);
 
-  u8x8.setCursor(4, 7);
-  u8x8.print(mv , 1);
+  u8x8.setCursor(3, 7);
+  u8x8.print(oxVact , 2);
   u8x8.print(" mV ");
 
-  if (mv > milivolt_low_error && mv < milivolt_high_error ) {
+  if (oxVact > milivolt_low_error && oxVact < milivolt_high_error ) {
     errorState = 0;
-    calibrationv = 0;
+    oxVair = 0;
     result_max = 0;
   } 
 }
@@ -390,10 +429,10 @@ void batteryMonitor() {
   }
 }
 
-void header(int result) {
+void header(float result) {
       u8x8.setFont(u8x8_font_inb21_2x4_r);      
       u8x8.setCursor(3, 0);
-      u8x8.print((float) result, 1);
+      u8x8.print(result, 1);
 
       // Draw a lin under the result
       u8x8.drawTile(0,4, 1, lijn_boven);
@@ -416,32 +455,38 @@ void header(int result) {
       u8x8.setFont(u8x8_font_chroma48medium8_r);
 }
 
-void analysing(int x, int cal) {
-  double currentmv = 0;
-  double result;
-  double mv = 0.0;
+void analysing(int x, int cal, int cal100) {
   int mod = 0;
   
 
-  read_sensor(0);
-  currentmv = RA.getAverage();
-  currentmv = abs(currentmv);
-
-  result = (currentmv / cal) * 20.9;
-
-  mv = currentmv * multiplier;
+  float oxVact = read_sensor(0);
 
 
-  //Serial.print(" mv = ");
-  //Serial.print(mv);
-  //Serial.print("\n");
+
+
+  //Serial.print("Oxygen = ");   
+  if (cal100 > 0 ) {
+
+ 
+   result = 20.9 + 79.1*(oxVact - cal)/(cal100 - cal);
+   //Serial.print(result);    
+   //Serial.print(" %  - Calibrated at air and 100% o2\n");   
+  } else {
+   result = (float(oxVact)/float(cal) )*20.9; 
+   //Serial.print(result);    
+   //Serial.print(" %  - Calibrated only on air\n");   
+  }
+
+  oxVact = oxVact*multiplier;
+
+
   if (result > 99.9) result = 99.9;
 
 
-  if (mv < milivolt_low_error || result <= 0 ) {
+  if (oxVact < milivolt_low_error || result <= 0  ) {
     u8x8.clearDisplay();
     errorState=1;
-  } else if ( mv > milivolt_high_error ) {
+  } else if ( oxVact > milivolt_high_error ) {
     u8x8.clearDisplay();
     errorState=2; 
   } else {
@@ -568,7 +613,7 @@ void analysing(int x, int cal) {
       u8x8.setCursor(0, 3);
 
       u8x8.print("Cell  | ");
-      u8x8.print( mv , 1); 
+      u8x8.print( oxVact , 2); 
       u8x8.print(" mV");
 
       u8x8.setCursor(0, 4);
@@ -583,9 +628,13 @@ void analysing(int x, int cal) {
 
 
       u8x8.setCursor(0, 6);
-      u8x8.print("      |");
+      if (cal100 > 0 ) {
+        u8x8.print("Cal   | Air + o2");
+      } else {
+        u8x8.print("Cal   | Air    ");
+      }
       u8x8.setCursor(0, 7);
-      u8x8.print("Firmw | 1.0");
+      u8x8.print("Firmw | 1.1");
     }
   }
 }
@@ -614,7 +663,7 @@ void loop(void) {
   }
 
   millis_held = (millis() - firstTime);
-  secs_held = millis_held / 1000;
+
 
   if (millis_held > 2) {
     if (current == LOW && previous == HIGH) {
@@ -631,12 +680,35 @@ void loop(void) {
         
         u8x8.clearDisplay();
       }
-      if (millis_held >= 400 ) {
-        max_clear();
-        calibrationv = calibrate(0);
+      if (millis_held >= 400 && millis_held < 5000 ) {
+
+
+
+        // Check if the measured mV is high enough to calibrate on 100% oxygen
+        // We allow a difference of 10mV to callibrate to 100%
+        // Save it to the memroy, we only need to do this once in a while
+        int oxVact = read_sensor(0);
+        oxVact = oxVact*multiplier;
+        
+        if ( (oxVact > (oxV1atm - 10) ) &&  oxVair > 0) {
+          oxVmax = calibrate(100.0);
+        }else {
+          max_clear();
+          oxVair = calibrate(20.9);
+        }
       }
+      
+      if (millis_held >= 5000 ) {
+         //Serial.print("Clear  100% o2\n");
+         max_clear();
+         oxVmax=0;
+         EEPROMWriteInt(2, 0);
+         oxVair = calibrate(20.9);
+      }
+      
     }
   }
+
 
   previous = current;
   prev_secs_held = secs_held;
@@ -645,11 +717,11 @@ void loop(void) {
     error(errorState);
   } else { 
     //calibration forced on boot
-    if (calibrationv == 0) {
-      calibrationv = calibrate(0);
+    if (oxVair == 0) {
+      oxVair = calibrate(20.9);
     }
 
-    analysing(0, calibrationv);
+    analysing(0, oxVair, oxVmax);
   }
   wdt_reset();
   active++;
