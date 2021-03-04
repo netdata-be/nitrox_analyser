@@ -172,7 +172,7 @@ void setup(void) {
   ads.setGain(GAIN_SIXTEEN);
   multiplier = 0.0078125F; 
 
-  pinMode(buttonPin, INPUT);
+  pinMode(buttonPin, INPUT_PULLUP);
 
   batteryMonitor();
 
@@ -658,7 +658,7 @@ void loop(void) {
  
  int current = digitalRead(buttonPin);
  
-  if (current == HIGH && previous == LOW && (millis() - firstTime) > 200) {
+  if (current == LOW && previous == HIGH && (millis() - firstTime) > 200) {
     firstTime = millis();
   }
 
@@ -666,7 +666,7 @@ void loop(void) {
 
 
   if (millis_held > 2) {
-    if (current == LOW && previous == HIGH) {
+    if (current == HIGH && previous == LOW) {
       if (millis_held <= 400) {
         
         page++;
